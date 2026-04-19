@@ -2,7 +2,7 @@
 -- MAGIC %md
 -- MAGIC # Set-up the project environment for Formula1 Project
 -- MAGIC 1. Create External Location databricks-course-ext-dl1-formula1
--- MAGIC 1. Create Catalog formula1
+-- MAGIC 1. Create Catalog formula1-incr
 -- MAGIC 1. Create Schemas landing, bronze, silver and gold
 -- MAGIC 1. Create Volume Files in the landing schema
 
@@ -13,7 +13,7 @@
 
 -- COMMAND ----------
 
--- MAGIC %fs ls 'abfss://formula1@dbcourseucexternaldl.dfs.core.windows.net/landing'
+-- MAGIC %fs ls 'abfss://formula1-incr@dbcourseucexternaldl.dfs.core.windows.net/landing'
 
 -- COMMAND ----------
 
@@ -26,15 +26,15 @@
 
 -- COMMAND ----------
 
-CREATE EXTERNAL LOCATION IF NOT EXISTS databricks_course_ext_dl1_formula1
-URL 'abfss://formula1@dbcourseucexternaldl.dfs.core.windows.net/'
+CREATE EXTERNAL LOCATION IF NOT EXISTS databricks_course_ext_dl1_formula1_incr
+URL 'abfss://formula1-incr@dbcourseucexternaldl.dfs.core.windows.net/'
 WITH (STORAGE CREDENTIAL `databricks-course-ext-storage-credential`)
 COMMENT 'External location for the formula1 container';
 
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC ### Create Catalog formula1
+-- MAGIC ### Create Catalog formula1_incr
 
 -- COMMAND ----------
 
@@ -42,8 +42,8 @@ SHOW CATALOGS;
 
 -- COMMAND ----------
 
-CREATE CATALOG IF NOT EXISTS formula1
-   MANAGED LOCATION 'abfss://formula1@dbcourseucexternaldl.dfs.core.windows.net/' 
+CREATE CATALOG IF NOT EXISTS formula1_incr
+   MANAGED LOCATION 'abfss://formula1-incr@dbcourseucexternaldl.dfs.core.windows.net/' 
    COMMENT 'This is the main catalog for the formula1 project' ;
 
 -- COMMAND ----------
@@ -53,13 +53,13 @@ CREATE CATALOG IF NOT EXISTS formula1
 
 -- COMMAND ----------
 
-CREATE SCHEMA IF NOT EXISTS formula1.landing;
-CREATE SCHEMA IF NOT EXISTS formula1.bronze
-    MANAGED LOCATION 'abfss://formula1@dbcourseucexternaldl.dfs.core.windows.net/bronze';
-CREATE SCHEMA IF NOT EXISTS formula1.silver
-    MANAGED LOCATION 'abfss://formula1@dbcourseucexternaldl.dfs.core.windows.net/silver';
-CREATE SCHEMA IF NOT EXISTS formula1.gold
-    MANAGED LOCATION 'abfss://formula1@dbcourseucexternaldl.dfs.core.windows.net/gold';         
+CREATE SCHEMA IF NOT EXISTS formula1_incr.landing;
+CREATE SCHEMA IF NOT EXISTS formula1_incr.bronze
+    MANAGED LOCATION 'abfss://formula1-incr@dbcourseucexternaldl.dfs.core.windows.net/bronze';
+CREATE SCHEMA IF NOT EXISTS formula1_incr.silver
+    MANAGED LOCATION 'abfss://formula1-incr@dbcourseucexternaldl.dfs.core.windows.net/silver';
+CREATE SCHEMA IF NOT EXISTS formula1_incr.gold
+    MANAGED LOCATION 'abfss://formula1-incr@dbcourseucexternaldl.dfs.core.windows.net/gold';         
 
 -- COMMAND ----------
 
@@ -67,7 +67,7 @@ SELECT current_catalog();
 
 -- COMMAND ----------
 
-USE CATALOG formula1;
+USE CATALOG formula1_incr;
 
 -- COMMAND ----------
 
@@ -80,9 +80,9 @@ SHOW SCHEMAS;
 
 -- COMMAND ----------
 
-CREATE EXTERNAL VOLUME IF NOT EXISTS formula1.landing.files
-LOCATION 'abfss://formula1@dbcourseucexternaldl.dfs.core.windows.net/landing';
+CREATE EXTERNAL VOLUME IF NOT EXISTS formula1_incr.landing.files
+LOCATION 'abfss://formula1-incr@dbcourseucexternaldl.dfs.core.windows.net/landing';
 
 -- COMMAND ----------
 
--- MAGIC %fs ls /Volumes/formula1/landing/files/
+-- MAGIC %fs ls /Volumes/formula1_incr/landing/files/
