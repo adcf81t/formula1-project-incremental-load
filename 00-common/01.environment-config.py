@@ -4,6 +4,9 @@ catalog_name = 'formula1_incr'
 bronze_schema = 'bronze'
 silver_schema = 'silver'
 gold_schema = 'gold'
+control_schema = 'control'
+
+
 
 # COMMAND ----------
 
