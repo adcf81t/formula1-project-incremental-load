@@ -9,6 +9,14 @@
 # MAGIC 1. Remove duplicate records
 # MAGIC 1. Transform values of column `race_name` to Title Case
 # MAGIC 1. Write the transformed data to silver `results` table
+# MAGIC
+# MAGIC Below changes are required to implement incremental load processing
+# MAGIC 1. Accept batch_id as a parameter to the notebook
+# MAGIC 2. Process data for only the batch_id being passed in (i.e. filter reading from bronze using the batch_id)
+# MAGIC 3. Add created_timestamp, updated_timestamp and batch_id to the silver table.
+# MAGIC 4. Merge the processed data to the silver table
+# MAGIC   - created_timestamp should only be populated at the time of inserting/creating the record. It should not be updated during the merge update.
+# MAGIC   - Ensure that we are not overwriting the data in silver table by older bronze data (re-run scenario)
 
 # COMMAND ----------
 
@@ -20,7 +28,16 @@
 
 # COMMAND ----------
 
+dbutils.widgets.text("p_batch_id", "")
+v_batch_id = dbutils.widgets.get("p_batch_id")
+
+# COMMAND ----------
+
 # MAGIC %run ../00-common/01.environment-config
+
+# COMMAND ----------
+
+# MAGIC %run ../00-common/03.silver-helpers
 
 # COMMAND ----------
 
@@ -40,6 +57,7 @@ from pyspark.sql import functions as F
 
 results_df = (
   spark.table(bronze_table)
+  .filter((F.col("batch_id") == v_batch_id))
        .select("season",
                 "round",
                 "constructorId",
@@ -54,7 +72,8 @@ results_df = (
                 "positionText",
                 "status",
                 "ingestion_timestamp",
-                "source_file")
+                "source_file",
+                "batch_id")
        .withColumnsRenamed({
             "constructorId": "constructor_id",
             "driverId": "driver_id",
@@ -111,13 +130,21 @@ results_final_df = (
 
 # COMMAND ----------
 
-(
-    results_final_df
-        .write
-        .format("delta")
-        .mode("overwrite")
-        .saveAsTable(silver_table)
-)
+#(
+#   results_final_df
+#        .write
+#        .format("delta")
+#        .mode("overwrite")
+#        .saveAsTable(silver_table)
+#)
+
+# COMMAND ----------
+
+ write_to_silver(input_df=results_final_df, 
+                 target_table=silver_table,
+                 merge_condition="t.season = s.season AND t.round = s.round AND t.constructor_id = s.constructor_id AND t.driver_id = s.driver_id",
+                 columns_to_update=["race_name", "race_date", "grid_position", "completed_laps", "car_number", "points", "final_position", "final_position_text", "status", "ingestion_timestamp", "source_file", "batch_id"])
+
 
 # COMMAND ----------
 

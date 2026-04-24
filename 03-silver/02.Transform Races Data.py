@@ -10,6 +10,14 @@
 # MAGIC 1. Transform values of column `race_name` to Title Case
 # MAGIC 1. Write the transformed data to silver `races` table
 # MAGIC
+# MAGIC Below changes are required to implement incremental load processing
+# MAGIC 1. Accept batch_id as a parameter to the notebook
+# MAGIC 2. Process data for only the batch_id being passed in (i.e. filter reading from bronze using the batch_id)
+# MAGIC 3. Add created_timestamp, updated_timestamp and batch_id to the silver table.
+# MAGIC 4. Merge the processed data to the silver table
+# MAGIC   - created_timestamp should only be populated at the time of inserting/creating the record. It should not be updated during the merge update.
+# MAGIC   - Ensure that we are not overwriting the data in silver table by older bronze data (re-run scenario)
+# MAGIC
 
 # COMMAND ----------
 
@@ -21,7 +29,16 @@
 
 # COMMAND ----------
 
+dbutils.widgets.text("p_batch_id", "")
+v_batch_id = dbutils.widgets.get("p_batch_id")
+
+# COMMAND ----------
+
 # MAGIC %run ../00-common/01.environment-config
+
+# COMMAND ----------
+
+# MAGIC %run ../00-common/03.silver-helpers
 
 # COMMAND ----------
 
@@ -123,6 +140,19 @@ display(races_final_df)
         .mode("overwrite")
         .saveAsTable(silver_table)
 )
+
+# COMMAND ----------
+
+# Add batch_id column required by write_to_silver merge condition
+races_with_batch_df = races_final_df.withColumn("batch_id", F.lit(v_batch_id))
+
+# Drop existing table to migrate schema (one-time: adds created_timestamp, updated_timestamp, batch_id)
+spark.sql(f"DROP TABLE IF EXISTS {silver_table}")
+
+write_to_silver(input_df=races_with_batch_df, 
+                target_table=silver_table,
+                merge_condition="t.race_id = s.race_id",
+                columns_to_update=["races_name", "season", "round", "race_date", "race_id", "ingestion_timestamp", "source_file", "batch_id"])
 
 # COMMAND ----------
 

@@ -12,6 +12,11 @@
 
 # COMMAND ----------
 
+dbutils.widgets.text("p_batch_id", "")
+v_batch_id = dbutils.widgets.get("p_batch_id")
+
+# COMMAND ----------
+
 # MAGIC %run ../00-common/01.environment-config
 
 # COMMAND ----------
@@ -21,7 +26,7 @@
 # COMMAND ----------
 
 # Define source_file and table_name
-source_file = f"{landing_folder_path}/sprints"
+source_file = f"{landing_folder_path}/{v_batch_id}/sprints"
 table_name = f"{catalog_name}.{bronze_schema}.sprints"
 
 # COMMAND ----------
@@ -86,13 +91,14 @@ sprints_final_df = add_ingestion_metadata(sprints_df)
 
 # COMMAND ----------
 
-(
-    sprints_final_df
-        .write
-        .format('delta')
-        .mode('overwrite')
-        .saveAsTable(table_name)
-)
+#(
+#    sprints_final_df
+#        .write
+#        .format('delta')
+#        .mode('overwrite')
+#        .saveAsTable(table_name)
+#)
+write_to_bronze(input_df=sprints_final_df, target_table=table_name, batch_id=v_batch_id)
 
 # COMMAND ----------
 

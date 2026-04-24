@@ -9,6 +9,13 @@
 
 # COMMAND ----------
 
+dbutils.widgets.text("p_batch_id", "")
+v_batch_id = dbutils.widgets.get("p_batch_id")
+
+
+
+# COMMAND ----------
+
 # MAGIC %run ../00-common/01.environment-config
 
 # COMMAND ----------
@@ -17,8 +24,12 @@
 
 # COMMAND ----------
 
-source_file = f"{landing_folder_path}/circuits.csv"
+source_file = f"{landing_folder_path}/{v_batch_id}/circuits.csv"
 table_name = f"{catalog_name}.{bronze_schema}.circuits"
+
+# COMMAND ----------
+
+
 
 # COMMAND ----------
 
@@ -72,18 +83,26 @@ display(circuits_final_df)
 
 # COMMAND ----------
 
+write_to_bronze(input_df=circuits_final_df, target_table=table_name, batch_id=v_batch_id)
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC #### Step 3 - Write to bronze delta table
 
 # COMMAND ----------
 
-(
-    circuits_final_df
-        .write
-        .format('delta')
-        .mode('overwrite')
-        .saveAsTable(table_name)
-)
+#circuits_final_df = circuits_final_df.withColumn("batch_id", F.lit(v_batch_id))
+
+#(
+#    circuits_final_df
+#        .write
+#       .format('delta')
+#        .mode('overwrite')
+#        .partitionBy('batch_id')
+#        .option('replaceWhere', f"batch_id = '{v_batch_id}'")
+#        .saveAsTable(table_name)
+#)
 
 # COMMAND ----------
 
@@ -91,4 +110,4 @@ display(spark.table(table_name))
 
 # COMMAND ----------
 
-display(spark.table('formula1.bronze.circuits'))
+display(spark.table('formula1_incr.bronze.circuits'))

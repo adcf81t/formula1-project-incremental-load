@@ -9,6 +9,11 @@
 
 # COMMAND ----------
 
+dbutils.widgets.text("p_batch_id", "")
+v_batch_id = dbutils.widgets.get("p_batch_id")
+
+# COMMAND ----------
+
 # MAGIC %run ../00-common/01.environment-config
 
 # COMMAND ----------
@@ -17,7 +22,7 @@
 
 # COMMAND ----------
 
-source_file = f"{landing_folder_path}/races.csv"
+source_file = f"{landing_folder_path}/{v_batch_id}/races.csv"
 table_name = f"{catalog_name}.{bronze_schema}.races"
 
 # COMMAND ----------
@@ -76,13 +81,15 @@ display(races_final_df)
 
 # COMMAND ----------
 
-(
-    races_final_df
-        .write
-        .format('delta')
-        .mode('overwrite')
-        .saveAsTable(table_name)
-)
+#(
+#    races_final_df
+#        .write
+#        .format('delta')
+#        .mode('overwrite')
+#        .saveAsTable(table_name)
+#)
+
+write_to_bronze(input_df=races_final_df, target_table=table_name, batch_id=v_batch_id)
 
 # COMMAND ----------
 
