@@ -1,0 +1,48 @@
+resources:
+  jobs:
+    job_formula1_incremental_batch_orchestration:
+      name: job_formula1_incremental_batch_orchestration
+      tasks:
+        - task_key: 01_identify_next_batch
+          notebook_task:
+            notebook_path: /Workspace/Users/indra_saha@hotmail.com/formula1-project-incremental-load/06-orchestration/01.Identify
+              Next Batch
+            source: WORKSPACE
+          existing_cluster_id: 0307-041933-d6is0bz0
+        - task_key: Is_There_A_Batch_To_Process
+          depends_on:
+            - task_key: 01_identify_next_batch
+          condition_task:
+            op: EQUAL_TO
+            left: "{{tasks.01_identify_next_batch.values.has_batch}}"
+            right: "true"
+        - task_key: 02_create_new_batch
+          depends_on:
+            - task_key: Is_There_A_Batch_To_Process
+              outcome: "true"
+          notebook_task:
+            notebook_path: /Workspace/Users/indra_saha@hotmail.com/formula1-project-incremental-load/06-orchestration/02.Create
+              New Batch
+            base_parameters:
+              p_batch_id: "{{tasks.01_identify_next_batch.values.p_batch_id}}"
+            source: WORKSPACE
+          existing_cluster_id: 0307-041933-d6is0bz0
+        - task_key: run_job_formula1_lakehouse_incremental_refresh
+          depends_on:
+            - task_key: 02_create_new_batch
+          run_job_task:
+            job_id: 765207168411397
+            job_parameters:
+              p_batch_id: "{{tasks.01_identify_next_batch.values.p_batch_id}}"
+        - task_key: 03_complete_batch
+          depends_on:
+            - task_key: run_job_formula1_lakehouse_incremental_refresh
+          notebook_task:
+            notebook_path: /Workspace/Users/indra_saha@hotmail.com/formula1-project-incremental-load/06-orchestration/03.Complete
+              Batch
+            base_parameters:
+              p_batch_id: "{{tasks.01_identify_next_batch.values.p_batch_id}}"
+            source: WORKSPACE
+          existing_cluster_id: 0307-041933-d6is0bz0
+      queue:
+        enabled: true
